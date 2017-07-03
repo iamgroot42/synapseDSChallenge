@@ -1,7 +1,9 @@
 import models
+from sklearn.utils import class_weight
 import numpy as np
 import sys
-from keras.optimizers import SGD
+from sklearn.metrics import roc_auc_score
+
 
 def antiOneHot(y):
 	return np.argmax(y, axis=1)
@@ -33,17 +35,21 @@ def loadFromFile(x_base, y_base):
 	return (X_train, Y_train), (X_val, Y_val), (X_test, Y_test)
 
 
-def trainCombinedModel(x_train, y_train, x_val, y_val, x_test, y_test):
-	sgd = SGD(lr=0.01, decay=1e-6, momentum=0.9, nesterov=True)
-	model = models.combineModels(models.getSiftNetwork(), models.getDenseNetwork(), sgd)
-	model.fit([x_train[:, :128], x_train[:, 128:]], y_train, epochs=20, batch_size=16, validation_data=([x_val[:, :128],x_val[:, 128:]], y_val))
-	score = model.evaluate([x_test[:, :128],x_test[:, 128:]], y_test, batch_size=128)
-	return score
+def trainKNNModel(x_train, y_train, x_test, y_test, K):
+	knn = models.getKNNModel(K)
+	knn.fit(x_train, y_train)
+	score = knn.score(x_test, y_test)
+	predict = knn.predict(x_test)
+	auc_score = roc_auc_score(y_test, predict, average='weighted')	
+	return score, auc_score
 
 
-if __name__ == "__main__":
-	D, L = np.load(sys.argv[1]), np.load(sys.argv[2])
+if __name__ == "__main__":	
+	D, L = np.load("../Data/Xdeep.npy"), np.load("../Data/Xsift.npy")
 	X = np.concatenate((D, L), axis=1)
-	Y = np.load(sys.argv[3])
+	Y = np.load("../Data/Y.npy")
 	(a,b), (c,d), (e,f) = getSplitData(X, Y)
-	print trainCombinedModel(a, b, c, d, e, f)	
+	A, B = np.concatenate((a,c)), np.concatenate((b,d))
+	scores = trainKNNModel(A, B, e, f, int(sys.argv[1]))
+	print "Testing accuracy:", scores[0]
+	print "AUC score:", scores[1]
