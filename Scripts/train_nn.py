@@ -10,7 +10,9 @@ def antiOneHot(y):
 	return np.argmax(y, axis=1)
 
 
-def getSplitData(X, Y, splitRatio = 0.8):
+def getSplitData(ex, ey, splitRatio = 0.8):
+	p = np.random.permutation(len(ex))
+	X, Y = ex[p], ey[p]
 	indices = {}
 	splitValRatio = splitRatio + (1.0 - splitRatio) / 2.0
 	Y_labels = antiOneHot(Y)
@@ -38,12 +40,9 @@ def loadFromFile(x_base, y_base):
 
 def loadFromFileUpdated(xd, xs, y, xdv, xsv, yv):
 	D, L, Y = np.load(xd), np.load(xs), np.load(y)
-	Dv, Lv, Y_test = np.load(xdv), np.load(xsv), np.load(yv)
-	X_test = np.concatenate((Dv, Lv), axis=1)
- 	(X_train, Y_train), (p, q), (r, s) = getSplitData(np.concatenate((D,L),axis=1), Y)
-	X_val = np.concatenate((p,r))
-	Y_val = np.concatenate((q,s))
-	return (X_train, Y_train), (X_val, Y_val), (X_test, Y_test)
+	Dv, Lv, Yv = np.load(xdv), np.load(xsv), np.load(yv)
+	Cv, C = np.concatenate((Dv, Lv), axis=1), np.concatenate((D, L), axis=1)
+ 	return getSplitData(np.concatenate((C, Cv)), np.concatenate((Y, Yv)), 0.7)
 
 
 def trainCombinedModel(x_train, y_train, x_val, y_val, x_test, y_test, lr, bs, e):
@@ -66,3 +65,6 @@ if __name__ == "__main__":
 	# (a,b), (c,d), (e,f) = getSplitData(X, Y)
 	(a,b), (c,d), (e,f) = loadFromFileUpdated("../Data/Xdeep.npy", "../Data/Xsift.npy", "../Data/Y.npy", "../Data/Xdeep_val.npy", "../Data/Xsift_val.npy", "../Data/Y_val.npy")
 	scores = trainCombinedModel(a, b, c, d, e, f, float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))
+	print "\nTesting accuracy:", scores[0][1]
+	print "AUC score:", scores[1]
+
