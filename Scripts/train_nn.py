@@ -66,5 +66,3 @@ if __name__ == "__main__":
 	# (a,b), (c,d), (e,f) = getSplitData(X, Y)
 	(a,b), (c,d), (e,f) = loadFromFileUpdated("../Data/Xdeep.npy", "../Data/Xsift.npy", "../Data/Y.npy", "../Data/Xdeep_val.npy", "../Data/Xsift_val.npy", "../Data/Y_val.npy")
 	scores = trainCombinedModel(a, b, c, d, e, f, float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))
-	print "\nTesting accuracy:", scores[0][1]
-	print "AUC score:", scores[1]
