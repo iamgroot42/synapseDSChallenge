@@ -41,17 +41,20 @@ def trainCombinedModel(x_train, y_train, x_val, y_val, x_test, y_test, lr, bs, e
 	model = models.combineModels(models.getSiftNetwork(), models.getDenseNetwork(), sgd)
 	classWeight = class_weight.compute_class_weight('balanced', np.unique(np.argmax(y_train,1)), np.argmax(y_train,1))
 	model.fit([x_train[:, :128], x_train[:, 128:]], y_train, epochs=e, batch_size=bs, validation_data=([x_val[:, :128],x_val[:, 128:]], y_val), class_weight=classWeight)
+	model.save("dsml_model")
 	score = model.evaluate([x_test[:, :128],x_test[:, 128:]], y_test, batch_size=128)
 	predictions = model.predict([x_test[:, :128],x_test[:, 128:]])
 	auc_score = roc_auc_score(y_test, predictions, average='weighted')
 	return score, auc_score
 
 
-if __name__ == "__main__":	
+if __name__ == "__main__":
 	D, L = np.load("../Data/Xdeep.npy"), np.load("../Data/Xsift.npy")
 	X = np.concatenate((D, L), axis=1)
 	Y = np.load("../Data/Y.npy")
 	(a,b), (c,d), (e,f) = getSplitData(X, Y)
-	scores = trainCombinedModel(a, b, c, d, e, f, float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))
+	C, D = np.concatenate((c,e)), np.concatenate((d,f))
+	E, F  = np.load("../Data/Xdeepv.npy"), np.load("../Data/Xsiftv.npy")
+	scores = trainCombinedModel(a, b, C, D, E, f, float(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))
 	print "\nTesting accuracy:", scores[0][1]
 	print "AUC score:", scores[1]
